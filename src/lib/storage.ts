@@ -1,8 +1,8 @@
 
 import dotenv from 'dotenv';
-import { Client, type ClientBase } from 'pg'; // Corrected import for ClientBase if needed, or just Client
+import { Client, type ClientBase } from 'pg';
 
-dotenv.config(); // Load environment variables at the top
+dotenv.config();
 
 // Define the Storage interface
 interface Storage {
@@ -30,7 +30,7 @@ class LocalStorage implements Storage {
 }
 
 // Cloud Database Storage implementation (currently PostgreSQL specific)
-class CloudDatabaseStorage implements Storage {
+export class CloudDatabaseStorage implements Storage {
   private client: Client; 
 
   constructor(dbUrl: string, dbType: string) {
