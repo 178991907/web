@@ -19,8 +19,8 @@ const siteSettings = {
   footerText: '© 2025 All-Subject English Enlightenment. All rights reserved. 由 Terry 开发和维护',
 };
 
-const LOCAL_STORAGE_CATEGORIES_KEY = 'linkHubCategories';
-const LOCAL_STORAGE_LINKS_KEY = 'linkHubLinks';
+const STORAGE_CATEGORIES_KEY = 'linkHubCategories';
+const STORAGE_LINKS_KEY = 'linkHubLinks';
 
 const initialMockCategories: Category[] = [
   { id: '1', name: '常用工具', slug: 'common-tools', createdDate: 'May 16, 2024', icon: 'tool' },
@@ -42,48 +42,56 @@ export default function DashboardPage() {
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    let loadedCategories: Category[] = initialMockCategories;
-    const storedCategories = localStorage.getItem(LOCAL_STORAGE_CATEGORIES_KEY);
-    if (storedCategories) {
+    const fetchData = async () => {
       try {
-        loadedCategories = JSON.parse(storedCategories);
-      } catch (e) {
-        console.error("Failed to parse categories from localStorage on homepage:", e);
-        localStorage.setItem(LOCAL_STORAGE_CATEGORIES_KEY, JSON.stringify(initialMockCategories));
-      }
-    } else {
-        localStorage.setItem(LOCAL_STORAGE_CATEGORIES_KEY, JSON.stringify(initialMockCategories));
-    }
-    setCategories(loadedCategories);
+        // 获取分类数据
+        const categoriesResponse = await fetch(`/api/storage?key=${STORAGE_CATEGORIES_KEY}`);
+        const categoriesData = await categoriesResponse.json();
+        let loadedCategories = categoriesData.data || initialMockCategories;
 
-    let loadedLinks: LinkItem[] = initialMockLinks;
-    const storedLinks = localStorage.getItem(LOCAL_STORAGE_LINKS_KEY);
-    if (storedLinks) {
-      try {
-        const parsedLinks: LinkItem[] = JSON.parse(storedLinks);
-        loadedLinks = parsedLinks.map((link: LinkItem) => ({
-          ...link,
-          categoryName: loadedCategories.find((cat: Category) => cat.id === link.categoryId)?.name || link.categoryName || 'Unknown Category',
-        }));
-      } catch (e) {
-        console.error("Failed to parse links from localStorage on homepage:", e);
-        // Fallback and reset if parsing fails
-        loadedLinks = initialMockLinks.map((link: LinkItem) => ({
-          ...link,
-          categoryName: loadedCategories.find((cat: Category) => cat.id === link.categoryId)?.name || link.categoryName || 'Unknown Category',
-        }));
-        localStorage.setItem(LOCAL_STORAGE_LINKS_KEY, JSON.stringify(loadedLinks));
-      }
-    } else {
-        loadedLinks = initialMockLinks.map((link: LinkItem) => ({
-          ...link,
-          categoryName: loadedCategories.find((cat: Category) => cat.id === link.categoryId)?.name || link.categoryName || 'Unknown Category',
-        }));
-        localStorage.setItem(LOCAL_STORAGE_LINKS_KEY, JSON.stringify(loadedLinks));
-    }
-    setLinks(loadedLinks);
+        if (!categoriesData.data) {
+          // 如果数据库中没有数据，保存初始数据
+          await fetch('/api/storage', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key: STORAGE_CATEGORIES_KEY, data: initialMockCategories }),
+          });
+          loadedCategories = initialMockCategories;
+        }
+        setCategories(loadedCategories);
 
-    setIsLoading(false);
+        // 获取链接数据
+        const linksResponse = await fetch(`/api/storage?key=${STORAGE_LINKS_KEY}`);
+        const linksData = await linksResponse.json();
+        let loadedLinks = linksData.data || initialMockLinks;
+
+        if (!linksData.data) {
+          // 如果数据库中没有数据，保存初始数据
+          const initialLinks = initialMockLinks.map((link: LinkItem) => ({
+            ...link,
+            categoryName: loadedCategories.find((cat: Category) => cat.id === link.categoryId)?.name || link.categoryName || 'Unknown Category',
+          }));
+          await fetch('/api/storage', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key: STORAGE_LINKS_KEY, data: initialLinks }),
+          });
+          loadedLinks = initialLinks;
+        } else {
+          loadedLinks = loadedLinks.map((link: LinkItem) => ({
+            ...link,
+            categoryName: loadedCategories.find((cat: Category) => cat.id === link.categoryId)?.name || link.categoryName || 'Unknown Category',
+          }));
+        }
+        setLinks(loadedLinks);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
 
   const filteredLinks = links.filter(link =>
