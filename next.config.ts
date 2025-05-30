@@ -2,7 +2,7 @@ import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
   /* config options here */
-  output: 'standalone',
+  output: 'export',
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -15,7 +15,7 @@ const nextConfig: NextConfig = {
       headers: [
         {
           key: 'Content-Security-Policy',
-          value: "default-src 'self' blob: data: https: *.vercel.app; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https: *.vercel.app; style-src 'self' 'unsafe-inline' https: *.vercel.app; img-src 'self' data: https: *.vercel.app; font-src 'self' data: https: *.vercel.app; connect-src 'self' blob: data: https: *.vercel.app www.google-analytics.com;",
+          value: "default-src 'self' blob: data: https: *.vercel.app www.google-analytics.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https: *.vercel.app www.google-analytics.com; style-src 'self' 'unsafe-inline' https: *.vercel.app; img-src 'self' data: https: *.vercel.app; font-src 'self' data: https: *.vercel.app; connect-src 'self' blob: data: https: *.vercel.app www.google-analytics.com;",
         },
       ],
     },
