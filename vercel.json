@@ -3,23 +3,26 @@
   "buildCommand": "next build",
   "installCommand": "npm install",
   "framework": "nextjs",
-  "outputDirectory": ".next",
+  "outputDirectory": "out",
   "regions": ["hnd1"],
   "builds": [
     {
       "src": "package.json",
-      "use": "@vercel/next"
+      "use": "@vercel/static"
     }
   ],
   "routes": [
     {
-      "src": "/_next/static/(.*)",
+      "src": "^/static/(.*)",
       "headers": { "cache-control": "public,max-age=31536000,immutable" },
       "continue": true
     },
     {
-      "src": "/(.*)",
-      "dest": "/"
+      "src": "^/[^.]+$",
+      "dest": "/index.html"
+    },
+    {
+      "handle": "filesystem"
     }
   ]
 }

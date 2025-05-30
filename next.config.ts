@@ -15,7 +15,7 @@ const nextConfig: NextConfig = {
       headers: [
         {
           key: 'Content-Security-Policy',
-          value: "default-src 'self' blob: data: https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https:; font-src 'self' data: https:; connect-src 'self' blob: data: https:;",
+          value: "default-src 'self' blob: data: https: *.vercel.app; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https: *.vercel.app; style-src 'self' 'unsafe-inline' https: *.vercel.app; img-src 'self' data: https: *.vercel.app; font-src 'self' data: https: *.vercel.app; connect-src 'self' blob: data: https: *.vercel.app www.google-analytics.com;",
         },
       ],
     },
