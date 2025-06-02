@@ -19,22 +19,6 @@ const siteSettings = {
   footerText: '© 2025 All-Subject English Enlightenment. All rights reserved. 由 Terry 开发和维护',
 };
 
-const STORAGE_CATEGORIES_KEY = 'linkHubCategories';
-const STORAGE_LINKS_KEY = 'linkHubLinks';
-
-const initialMockCategories: Category[] = [
-  { id: '1', name: '常用工具', slug: 'common-tools', createdDate: 'May 16, 2024', icon: 'tool' },
-  { id: '2', name: '儿童游戏', slug: 'kids-games', createdDate: 'May 16, 2024', icon: 'gamepad-2' },
-];
-
-const initialMockLinks: LinkItem[] = [
-  { id: 'L1', title: '搜索 (Baidu)', url: 'https://www.baidu.com', categoryId: '1', categoryName: '常用工具', createdDate: 'May 16, 2024', imageUrl: 'https://placehold.co/120x80.png', aiHint: 'search baidu', description: 'Leading Chinese Search Engine', faviconUrl: '' },
-  { id: 'L3', title: 'guge (Google)', url: 'https://www.google.com', categoryId: '1', categoryName: '常用工具', createdDate: 'May 16, 2024', imageUrl: 'https://placehold.co/120x80.png', aiHint: 'search google', description: 'Global Search Engine', faviconUrl: '' },
-  { id: 'g1', title: '字母游戏', url: '#game-alphabet', categoryId: '2', categoryName: '儿童游戏', createdDate: 'May 17, 2024', imageUrl: 'https://placehold.co/100x100.png', aiHint: 'alphabet game', description: '学习英文字母', faviconUrl: '' },
-  { id: 'L4', title: '谷歌', url: 'https://www.google.com', categoryId: '1', categoryName: '常用工具', createdDate: 'May 16, 2024', imageUrl: '', aiHint: 'search example', description: '1111', faviconUrl: '' },
-];
-
-
 export default function DashboardPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [links, setLinks] = useState<LinkItem[]>([]);
@@ -43,49 +27,35 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const fetchData = async () => {
+      setIsLoading(true);
       try {
         // 获取分类数据
-        const categoriesResponse = await fetch(`/api/storage?key=${STORAGE_CATEGORIES_KEY}`);
-        const categoriesData = await categoriesResponse.json();
-        let loadedCategories = categoriesData.data || initialMockCategories;
-
-        if (!categoriesData.data) {
-          // 如果数据库中没有数据，保存初始数据
-          await fetch('/api/storage', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ key: STORAGE_CATEGORIES_KEY, data: initialMockCategories }),
-          });
-          loadedCategories = initialMockCategories;
+        const categoriesResponse = await fetch('/api/categories');
+        if (!categoriesResponse.ok) {
+          throw new Error(`Failed to fetch categories: ${categoriesResponse.statusText}`);
         }
+        const loadedCategories: Category[] = await categoriesResponse.json();
         setCategories(loadedCategories);
 
         // 获取链接数据
-        const linksResponse = await fetch(`/api/storage?key=${STORAGE_LINKS_KEY}`);
-        const linksData = await linksResponse.json();
-        let loadedLinks = linksData.data || initialMockLinks;
-
-        if (!linksData.data) {
-          // 如果数据库中没有数据，保存初始数据
-          const initialLinks = initialMockLinks.map((link: LinkItem) => ({
-            ...link,
-            categoryName: loadedCategories.find((cat: Category) => cat.id === link.categoryId)?.name || link.categoryName || 'Unknown Category',
-          }));
-          await fetch('/api/storage', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ key: STORAGE_LINKS_KEY, data: initialLinks }),
-          });
-          loadedLinks = initialLinks;
-        } else {
-          loadedLinks = loadedLinks.map((link: LinkItem) => ({
-            ...link,
-            categoryName: loadedCategories.find((cat: Category) => cat.id === link.categoryId)?.name || link.categoryName || 'Unknown Category',
-          }));
+        const linksResponse = await fetch('/api/links');
+        if (!linksResponse.ok) {
+          throw new Error(`Failed to fetch links: ${linksResponse.statusText}`);
         }
+        let loadedLinks: LinkItem[] = await linksResponse.json();
+
+        // Populate categoryName for links
+        loadedLinks = loadedLinks.map((link: LinkItem) => ({
+          ...link,
+          categoryName: loadedCategories.find((cat: Category) => cat.id === link.categoryId)?.name || link.categoryName || 'Unknown Category',
+        }));
         setLinks(loadedLinks);
+
       } catch (error) {
         console.error('Error fetching data:', error);
+        // Optionally, set categories and links to empty arrays or show an error state
+        setCategories([]);
+        setLinks([]);
       } finally {
         setIsLoading(false);
       }
