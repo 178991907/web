@@ -3,13 +3,12 @@
 
 import { useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
+import { Search, Loader2 } from 'lucide-react';
 import { LogoDisplay } from '@/components/dashboard/LogoDisplay';
 import { HeaderNav } from '@/components/dashboard/HeaderNav';
 import { ToolCard, type Tool } from '@/components/dashboard/ToolCard';
 import type { Category } from '@/app/admin/categories/page';
 import type { LinkItem } from '@/app/admin/links/new/page';
-
 
 const siteSettings = {
   siteName: '英语全科启蒙', 
@@ -24,36 +23,44 @@ export default function DashboardPage() {
   const [links, setLinks] = useState<LinkItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
+      setError(null);
+      
       try {
-        // 获取分类数据
-        const categoriesResponse = await fetch('/api/categories');
+        // 并行获取数据以提高加载速度
+        const [categoriesResponse, linksResponse] = await Promise.all([
+          fetch('/api/categories'),
+          fetch('/api/links')
+        ]);
+
         if (!categoriesResponse.ok) {
           throw new Error(`Failed to fetch categories: ${categoriesResponse.statusText}`);
         }
-        const loadedCategories: Category[] = await categoriesResponse.json();
-        setCategories(loadedCategories);
-
-        // 获取链接数据
-        const linksResponse = await fetch('/api/links');
         if (!linksResponse.ok) {
           throw new Error(`Failed to fetch links: ${linksResponse.statusText}`);
         }
-        let loadedLinks: LinkItem[] = await linksResponse.json();
 
-        // Populate categoryName for links
-        loadedLinks = loadedLinks.map((link: LinkItem) => ({
+        const [loadedCategories, loadedLinks] = await Promise.all([
+          categoriesResponse.json(),
+          linksResponse.json()
+        ]);
+
+        setCategories(loadedCategories);
+
+        // 优化链接数据处理
+        const processedLinks = loadedLinks.map((link: LinkItem) => ({
           ...link,
           categoryName: loadedCategories.find((cat: Category) => cat.id === link.categoryId)?.name || link.categoryName || 'Unknown Category',
         }));
-        setLinks(loadedLinks);
+        setLinks(processedLinks);
 
       } catch (error) {
         console.error('Error fetching data:', error);
-        // Optionally, set categories and links to empty arrays or show an error state
+        setError('数据加载失败，请稍后重试');
         setCategories([]);
         setLinks([]);
       } finally {
@@ -71,7 +78,20 @@ export default function DashboardPage() {
   );
 
   if (isLoading) {
-    return <div className="flex min-h-screen items-center justify-center bg-background"><p>Loading dashboard...</p></div>;
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background flex-col gap-4">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-muted-foreground">加载中，请稍候...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <p className="text-destructive">{error}</p>
+      </div>
+    );
   }
 
   return (
@@ -103,48 +123,22 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {categories.map(category => {
-          const itemsForCategory = filteredLinks.filter(item => item.categoryId === category.id);
-          if (itemsForCategory.length === 0 && searchTerm) return null;
-
-          return (
-            <section key={category.id} className="mb-16">
-              <h2 className="text-3xl font-semibold text-primary mb-8">{category.name}</h2>
-              {itemsForCategory.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                  {itemsForCategory.map((item) => {
-                    const toolItem: Tool = {
-                      id: item.id,
-                      title: item.title,
-                      description: item.description,
-                      link: item.url,
-                      imageUrl: item.imageUrl || '',
-                      aiHint: item.aiHint || 'icon',
-                    };
-                    return <ToolCard key={item.id} tool={toolItem} />;
-                  })}
-                </div>
-              ) : (
-                <p className="text-muted-foreground">
-                  {searchTerm ? `No items match your search in "${category.name}".` : `No items in this category yet.`}
-                </p>
-              )}
-            </section>
-          );
-        })}
-         {categories.length === 0 && (
-           <p className="text-muted-foreground text-xl">No categories have been set up yet.</p>
-         )}
-         {categories.length > 0 && filteredLinks.length === 0 && searchTerm && (
-            <p className="text-muted-foreground text-xl mt-8">No links match your search term &quot;{searchTerm}&quot;.</p>
-         )}
-
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredLinks.map((link) => (
+            <ToolCard
+              key={link.id}
+              title={link.title}
+              description={link.description || ''}
+              category={link.categoryName || 'Uncategorized'}
+              url={link.url}
+              imageUrl={link.imageUrl}
+            />
+          ))}
+        </div>
       </main>
 
-      <footer className="py-6 text-center text-sm text-muted-foreground border-t">
-        <p>
-          {siteSettings.footerText}
-        </p>
+      <footer className="py-6 text-center text-sm text-muted-foreground">
+        {siteSettings.footerText}
       </footer>
     </div>
   );

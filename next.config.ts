@@ -2,7 +2,9 @@ import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
   /* config options here */
-  output: 'standalone',
+  output: 'export',
+  optimizeFonts: true,
+  compress: true,
   typescript: {
     ignoreBuildErrors: true,
   },
