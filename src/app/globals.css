@@ -44,25 +44,3 @@
     @apply bg-background text-foreground;
   }
 }
-
-@layer utilities {
-  .animated-text-gradient-en {
-    background-image: linear-gradient(to right, theme('colors.green.400'), theme('colors.blue.500'), theme('colors.purple.600'), theme('colors.green.400'));
-    background-size: 250% auto; /* Increased size for smoother animation */
-    animation: text-gradient-flow 8s linear infinite; /* Slower animation */
-  }
-  .animated-text-gradient-zh {
-    background-image: linear-gradient(to right, theme('colors.yellow.400'), theme('colors.orange.500'), theme('colors.red.600'), theme('colors.yellow.400'));
-    background-size: 250% auto; /* Increased size for smoother animation */
-    animation: text-gradient-flow 8s linear infinite; /* Slower animation */
-  }
-}
-
-@keyframes text-gradient-flow {
-  0% {
-    background-position: 0% center;
-  }
-  100% {
-    background-position: -200% center; /* Adjusted to ensure full cycle */
-  }
-}
