@@ -3,17 +3,17 @@ const mongoose = require('mongoose');
 require('dotenv').config();
 
 const DB_TYPE = process.env.DB_TYPE || 'postgresql';
+const DATABASE_URL = process.env.NEXT_PUBLIC_DATABASE_URL;
 
 let db;
 
 if (DB_TYPE === 'postgresql') {
     // PostgreSQL 配置
     db = new Pool({
-        host: process.env.PG_HOST,
-        user: process.env.PG_USER,
-        password: process.env.PG_PASSWORD,
-        database: process.env.PG_DATABASE,
-        port: process.env.PG_PORT || 5432
+        connectionString: DATABASE_URL,
+        ssl: {
+            rejectUnauthorized: false
+        }
     });
 
     // PostgreSQL CRUD 方法
