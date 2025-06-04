@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getStorage } from '@/lib/storage';
 import { randomUUID } from 'crypto';
 
+// 配置静态导出
+export const dynamic = 'force-static';
+export const revalidate = 3600; // 每小时重新验证一次
+
 // Define the LinkItem type, similar to frontend and AI Rules
 export interface LinkItem {
   id: string;
