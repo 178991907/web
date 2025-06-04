@@ -1,145 +1,115 @@
 
-'use client'; 
+'use client';
 
 import { useEffect, useState } from 'react';
-import { Input } from '@/components/ui/input';
-import { Search, Loader2 } from 'lucide-react';
-import { LogoDisplay } from '@/components/dashboard/LogoDisplay';
-import { HeaderNav } from '@/components/dashboard/HeaderNav';
-import { ToolCard, type Tool } from '@/components/dashboard/ToolCard';
-import type { Category } from '@/app/admin/categories/page';
-import type { LinkItem } from '@/app/admin/links/new/page';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-const siteSettings = {
-  siteName: '英语全科启蒙', 
-  logoUrl: 'https://pic1.imgdb.cn/item/6817c79a58cb8da5c8dc723f.png',
-  welcomeMessageEn: 'Welcome to All-Subject English Enlightenment',
-  welcomeMessageZh: '系统 (平台) 由 Erin 英语全科启蒙团队独立开发完成',
-  footerText: '© 2025 All-Subject English Enlightenment. All rights reserved. 由 Terry 开发和维护',
-};
+interface Category {
+  id: number;
+  name: string;
+}
 
-export default function DashboardPage() {
+interface Link {
+  id: number;
+  name: string;
+  url: string;
+  category_name: string;
+}
+
+export default function HomePage() {
   const [categories, setCategories] = useState<Category[]>([]);
-  const [links, setLinks] = useState<LinkItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [links, setLinks] = useState<Link[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      setError(null);
-      
-      try {
-        // 并行获取数据以提高加载速度
-        const [categoriesResponse, linksResponse] = await Promise.all([
-          fetch('/api/categories'),
-          fetch('/api/links')
-        ]);
+  const fetchData = async () => {
+    try {
+      const [categoriesRes, linksRes] = await Promise.all([
+        fetch('/api/storage?key=categories'),
+        fetch('/api/storage?key=links')
+      ]);
 
-        if (!categoriesResponse.ok) {
-          throw new Error(`Failed to fetch categories: ${categoriesResponse.statusText}`);
-        }
-        if (!linksResponse.ok) {
-          throw new Error(`Failed to fetch links: ${linksResponse.statusText}`);
-        }
-
-        const [loadedCategories, loadedLinks] = await Promise.all([
-          categoriesResponse.json(),
-          linksResponse.json()
-        ]);
-
-        setCategories(loadedCategories);
-
-        // 优化链接数据处理
-        const processedLinks = loadedLinks.map((link: LinkItem) => ({
-          ...link,
-          categoryName: loadedCategories.find((cat: Category) => cat.id === link.categoryId)?.name || link.categoryName || 'Unknown Category',
-        }));
-        setLinks(processedLinks);
-
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        setError('数据加载失败，请稍后重试');
-        setCategories([]);
-        setLinks([]);
-      } finally {
-        setIsLoading(false);
+      if (!categoriesRes.ok || !linksRes.ok) {
+        throw new Error('获取数据失败');
       }
-    };
 
+      const categoriesData = await categoriesRes.json();
+      const linksData = await linksRes.json();
+
+      setCategories(categoriesData.data || []);
+      setLinks(linksData.data || []);
+      setError(null);
+    } catch (err: any) {
+      setError(err.message);
+      console.error('获取数据错误:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchData();
+    // 设置定时器，每30秒更新一次数据
+    const interval = setInterval(fetchData, 30000);
+    return () => clearInterval(interval);
   }, []);
 
-  const filteredLinks = links.filter(link =>
-    link.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    link.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    link.categoryName?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background flex-col gap-4">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-muted-foreground">加载中，请稍候...</p>
-      </div>
-    );
+  if (loading) {
+    return <div className="container mx-auto p-4">加载中...</div>;
   }
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <p className="text-destructive">{error}</p>
+      <div className="container mx-auto p-4 text-red-500">
+        错误: {error}
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <HeaderNav />
+    <div className="container mx-auto p-4">
+      <h1 className="text-3xl font-bold mb-6">链接导航</h1>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {categories.map((category) => {
+          const categoryLinks = links.filter(
+            (link) => link.category_name === category.name
+          );
 
-      <main className="flex-grow container mx-auto px-4 py-12 sm:py-16 md:py-20 text-center">
-        <div className="mb-12">
-          <LogoDisplay logoUrl={siteSettings.logoUrl} siteName={siteSettings.siteName} />
-        </div>
+          return (
+            <Card key={category.id} className="shadow-lg">
+              <CardHeader>
+                <CardTitle>{category.name}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2">
+                  {categoryLinks.map((link) => (
+                    <li key={link.id}>
+                      <a
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-500 hover:text-blue-700 hover:underline"
+                      >
+                        {link.name}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+                {categoryLinks.length === 0 && (
+                  <p className="text-gray-500">暂无链接</p>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
 
-        <p className="text-xl sm:text-2xl lg:text-3xl font-bold mb-3 bg-clip-text text-transparent animated-text-gradient-en">
-          {siteSettings.welcomeMessageEn}
+      {categories.length === 0 && (
+        <p className="text-center text-gray-500 mt-8">
+          暂无分类，请在管理页面添加分类和链接
         </p>
-        <p className="text-lg sm:text-xl lg:text-2xl font-semibold mb-12 bg-clip-text text-transparent animated-text-gradient-zh">
-          {siteSettings.welcomeMessageZh}
-        </p>
-
-        <div className="max-w-xl mx-auto mb-16">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search..."
-              className="pl-10 py-3 text-base h-12 rounded-lg shadow-sm"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredLinks.map((link) => (
-            <ToolCard
-              key={link.id}
-              title={link.title}
-              description={link.description || ''}
-              category={link.categoryName || 'Uncategorized'}
-              url={link.url}
-              imageUrl={link.imageUrl}
-            />
-          ))}
-        </div>
-      </main>
-
-      <footer className="py-6 text-center text-sm text-muted-foreground">
-        {siteSettings.footerText}
-      </footer>
+      )}
     </div>
   );
 }
