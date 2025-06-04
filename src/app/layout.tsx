@@ -21,14 +21,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`} suppressHydrationWarning>
-      <body className={`font-sans antialiased`}>
+      <body className={`min-h-screen font-sans antialiased bg-background`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <main className="flex flex-col min-h-screen">
+            {children}
+          </main>
           <Toaster />
         </ThemeProvider>
       </body>
