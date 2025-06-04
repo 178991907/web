@@ -3,6 +3,8 @@
 
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import Image from 'next/image';
 
 interface Category {
   id: number;
@@ -67,10 +69,29 @@ export default function HomePage() {
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-6">链接导航</h1>
+    <div className="container mx-auto p-4 min-h-screen flex flex-col items-center">
+      <div className="text-center mb-8 mt-12">
+        <div className="flex justify-center mb-4">
+          <Image
+            src="/logo.png"
+            alt="KT Erin Logo"
+            width={120}
+            height={120}
+            className="rounded-lg shadow-lg"
+          />
+        </div>
+        <h1 className="text-4xl font-bold mb-2 bg-clip-text text-transparent animated-text-gradient-zh">全科启蒙</h1>
+        <p className="text-xl text-muted-foreground mb-6">0-12岁</p>
+        <div className="w-full max-w-xl mx-auto mb-8">
+          <Input
+            type="search"
+            placeholder="搜索链接..."
+            className="w-full h-12 px-4 rounded-lg shadow-sm transition-all duration-200 focus:shadow-lg"
+          />
+        </div>
+      </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {categories.map((category) => {
           const categoryLinks = links.filter(
             (link) => link.category_name === category.name
